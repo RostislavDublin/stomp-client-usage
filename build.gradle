@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+    id 'java-library'
+    
+}
+
+group 'lab.rdublin'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+    implementation group:'io.vertx', name: 'vertx-stomp', version: '3.8.0'
+    implementation 'io.vertx:vertx-core:3.8.0'
+    implementation group: 'org.springframework', name: 'spring-messaging', version: '4.3.24.RELEASE'
+
+}
