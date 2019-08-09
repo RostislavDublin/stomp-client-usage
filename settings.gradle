@@ -1,3 +1,5 @@
 rootProject.name = 'stomp-client-usage'
-
+include 'spring-stomp-client'
+include 'vertx-stomp-client'
+include 'sonic-client'
 

@@ -18,5 +18,6 @@ dependencies {
     implementation group:'io.vertx', name: 'vertx-stomp', version: '3.8.0'
     implementation 'io.vertx:vertx-core:3.8.0'
     implementation group: 'org.springframework', name: 'spring-messaging', version: '4.3.24.RELEASE'
-
+    implementation group: 'org.springframework', name: 'spring-websocket', version: '4.3.24.RELEASE'
+    implementation 'com.google.code.gson:gson:2.8.5'
 }

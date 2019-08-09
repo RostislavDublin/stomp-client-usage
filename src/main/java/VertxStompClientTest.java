@@ -5,8 +5,11 @@ import io.vertx.ext.stomp.StompClientConnection;
 import io.vertx.ext.stomp.StompClientOptions;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
-public class StompClientTest {
+public class VertxStompClientTest {
 
     public static void init() {
         Vertx vertx = Vertx.vertx();
@@ -20,6 +23,10 @@ public class StompClientTest {
         client.receivedFrameHandler(event -> {
             System.out.println("Client ReceivedFrameHandler: " + event.getCommand().name());
         });
+
+        String destination;
+        //destination = "/topic/jms.samples.chat";
+        destination = "/queue/SampleQ1";
 
         client.connect(61613, "172.30.94.196", ar -> {
             //client.connect(61613, "127.0.0.1", ar -> {
@@ -59,18 +66,25 @@ public class StompClientTest {
                 });
 
                 //connection.subscribe("Sample/Q1",
-                connection.subscribe("jms.samples.chat",
-                        event -> { System.out.println("> Subscription. Received handler: "
-                                + event.getCommand().toString()
-                                +": "+event.getBodyAsString()); },
-                        event -> { System.out.println("> Subscription. Receipt handler "   + event.getCommand().toString()); }
-                        );
+                connection.subscribe(destination,
+                        event -> {
+                            System.out.println("> Subscription. Received handler: "
+                                    + event.getCommand().toString()
+                                    + ": " + event.getBodyAsString());
+                        },
+                        event -> {
+                            System.out.println("> Subscription. Receipt handler: " + event.getCommand().toString());
 
-                String msg = "Hello Dolly!";
-                Buffer payload = Buffer.buffer(msg);
-                connection.send("jms.samples.chat", payload, event -> {
-                    System.out.println("<> ??? " + event.getBodyAsString("UTF-8"));
-                });
+                        }
+                );
+
+//                String msg = "Hello " + new Date().toString();
+//                Map<String, String> headers = new HashMap<>();
+//                headers.put("custom-header", "custom-value1");
+//                Buffer payload = Buffer.buffer(msg);
+//                connection.send(destination, headers, payload, event -> {
+//                    System.out.println("Send. Receipt handler: " + event.getBodyAsString("UTF-8"));
+//                });
 
                 //System.out.println("* Client initiates disconnect");
                 //connection.disconnect();
