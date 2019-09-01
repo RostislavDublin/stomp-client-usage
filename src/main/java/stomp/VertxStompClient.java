@@ -2,13 +2,16 @@ package stomp;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.ext.stomp.Frame;
 import io.vertx.ext.stomp.StompClient;
 import io.vertx.ext.stomp.StompClientConnection;
 import io.vertx.ext.stomp.StompClientOptions;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,18 +24,30 @@ public class VertxStompClient {
     StompClientOptions options = new StompClientOptions();
     private StompClient stompClient;
     private Vertx vertx = Vertx.vertx();
+    //new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsValue(Buffer.buffer("10.211.55.3 myserver"))));
     private StompClientConnection connection;
-    private int brokerPort = 61613;
-    private String brokerHost = "10.211.55.3";
+    private int brokerPort;
+    private String brokerHost;
 
     public VertxStompClient(String brokerHost, int brokerPort, String login, String password) {
 
-        options.setConnectTimeout(60000);
+        this.brokerHost = brokerHost;
+        this.brokerPort = brokerPort;
+
+        options.setConnectTimeout(10000);
         options.setIdleTimeout(60000);
         options.setLogin(login);
         options.setPasscode(password);
 
         stompClient = StompClient.create(vertx, options);
+    }
+
+    public StompClientOptions getOptions() {
+        return options;
+    }
+
+    public void send(String destination, String textMessage) {
+        send(destination, textMessage, null);
     }
 
     public void send(String destination, String textMessage, Map<String, String> customHeaders) {
@@ -92,25 +107,33 @@ public class VertxStompClient {
 
     }
 
-    public void connect() {
-        StompClientConnection[] connectionHolder = new StompClientConnection[1];
-        while (connectionHolder[0] == null) {
-            System.out.println("* CONNECT...");
-            stompClient.connect(brokerPort, brokerHost, ar -> {
-                if (ar.succeeded()) {
-                    connectionHolder[0] = ar.result();
-                    System.out.println("* CONNECTED Ready to send STOMP frames");
-                } else {
-                    System.out.println("* FAILED to connect to the STOMP server: " + ar.cause().toString());
-                    stompClient.close();
-                    vertx.close();
-                }
-            });
+    public VertxStompClient connect() {
+        final StompClientConnection[] connectionHolder = new StompClientConnection[1];
+        final boolean[] stopAttempts = new boolean[1];
+        System.out.println(new Date().toString() + "*" + stopAttempts[0]);
+        System.out.println("* CONNECT...");
+        stompClient.connect(brokerPort, brokerHost, ar -> {
+            if (ar.succeeded()) {
+                connectionHolder[0] = ar.result();
+                System.out.println("* CONNECTED Ready to send STOMP frames");
+            } else {
+                stopAttempts[0] = true;
+                System.out.println("* FAILED to connect to the STOMP server: " + ar.cause().toString());
+                stompClient.close();
+                vertx.close();
+            }
+        });
+
+        while ((connectionHolder[0] == null) && !stopAttempts[0]) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 //e.printStackTrace();
             }
+        }
+
+        if (stopAttempts[0]) {
+            return this;
         }
 
         setConnection(connectionHolder[0]);
@@ -154,10 +177,11 @@ public class VertxStompClient {
             System.out.println("Client ReceivedFrameHandler: " + event.getCommand().name());
         });
 */
+        return this;
     }
 
-    public void close(){
-        if(getConnection() != null && getConnection().isConnected()){
+    public void close() {
+        if (getConnection() != null && getConnection().isConnected()) {
             connection.disconnect();
         }
         stompClient.close();
