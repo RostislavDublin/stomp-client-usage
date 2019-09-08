@@ -30,8 +30,8 @@ public class VertxStompServer {
 
         options.setIdleTimeout(60000);
 
-        this.handler = StompServerHandler.create(vertx);
-        this.stompServer = StompServer
+        handler = StompServerHandler.create(vertx);
+        stompServer = StompServer
                 .create(vertx, options)
                 .handler(handler);
     }

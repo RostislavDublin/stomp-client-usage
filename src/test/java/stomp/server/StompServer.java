@@ -17,6 +17,11 @@ public class StompServer {
         });
         executor.shutdown();
 
+        server.getStompServer().stompHandler().receivedFrameHandler((serverFrame)->{
+            System.out.println(serverFrame.frame().toString());
+        });
+
+
         Scanner in = new Scanner(System.in);
         while (true) {
             String msg = in.nextLine();
