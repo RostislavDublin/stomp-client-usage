@@ -17,14 +17,12 @@
 package spring;
 
 import org.springframework.context.Lifecycle;
-import org.springframework.messaging.simp.stomp.BufferingStompDecoder;
 import org.springframework.messaging.simp.stomp.ConnectionHandlingStompSession;
 import org.springframework.messaging.simp.stomp.StompClientSupport;
-import org.springframework.messaging.simp.stomp.StompDecoder;
-import org.springframework.messaging.simp.stomp.StompEncoder;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.concurrent.ListenableFuture;
 
 import java.io.IOException;
@@ -35,38 +33,44 @@ import java.io.IOException;
  * @author Rostislav Dublin
  * @since 4.2
  */
-public class TcpStompClient extends StompClientSupport implements Lifecycle {
+public class StompClient extends StompClientSupport implements Lifecycle {
 
-    private final TcpClient tcpClient;
+    private final StompTcpOperations stompTcpOperations;
     private volatile boolean running = false;
 
     /**
      * Create an instance with host "127.0.0.1" and port 61613.
      */
-    public TcpStompClient() throws IOException {
+    public StompClient() throws IOException {
         this("127.0.0.1", 61613);
     }
 
     /**
      * Create an instance with the given host and port to connect to
      */
-    public TcpStompClient(String host, int port) throws IOException {
-        this.tcpClient = new TcpClient(host, port);
+    public StompClient(String host, int port) throws IOException {
+        this.stompTcpOperations = new StompTcpOperations(host, port);
     }
 
     /**
      * Create an instance with a pre-configured TCP client.
      *
-     * @param tcpClient the client to use
+     * @param stompTcpOperations the client to use
      */
-    public TcpStompClient(TcpClient tcpClient) {
-        this.tcpClient = tcpClient;
+    public StompClient(StompTcpOperations stompTcpOperations) {
+        this.stompTcpOperations = stompTcpOperations;
+    }
+
+    @Override
+    public TaskScheduler getTaskScheduler() {
+        return stompTcpOperations.getTaskScheduler();
     }
 
     @Override
     public void start() {
         if (!isRunning()) {
             this.running = true;
+            stompTcpOperations.start();
         }
     }
 
@@ -74,6 +78,7 @@ public class TcpStompClient extends StompClientSupport implements Lifecycle {
     public void stop() {
         if (isRunning()) {
             this.running = false;
+            stompTcpOperations.stop();
         }
     }
 
@@ -103,7 +108,7 @@ public class TcpStompClient extends StompClientSupport implements Lifecycle {
      */
     public ListenableFuture<StompSession> connect(StompHeaders connectHeaders, StompSessionHandler handler) {
         ConnectionHandlingStompSession session = createSession(connectHeaders, handler);
-        this.tcpClient.connect(session);
+        this.stompTcpOperations.connect(session);
         return session.getSessionFuture();
     }
 
@@ -111,7 +116,7 @@ public class TcpStompClient extends StompClientSupport implements Lifecycle {
      * Shut down the client and release resources.
      */
     public void shutdown() {
-        this.tcpClient.shutdown();
+        this.stompTcpOperations.shutdown();
     }
 
 }

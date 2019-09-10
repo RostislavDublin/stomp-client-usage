@@ -29,6 +29,7 @@ public class VertxStompServer {
         this.listenPort = listenPort;
 
         options.setIdleTimeout(60000);
+        System.out.println(options.getHeartbeat());
 
         handler = StompServerHandler.create(vertx);
         stompServer = StompServer
