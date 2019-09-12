@@ -23,10 +23,6 @@ public class Helper {
         }
     }
 
-    public static void say(String phrase) {
-        System.out.println(phrase);
-    }
-
     public static void notifyAll(Frame[] messageFrame) {
         synchronized (messageFrame) {
             messageFrame.notifyAll();
