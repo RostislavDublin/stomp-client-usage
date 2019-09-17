@@ -22,8 +22,8 @@ import java.util.Scanner;
 public class InteractiveTopicTalk {
     private static Say say = new Say();
     private static String subscriptionId = "stomp-subscription-1";
-    private static String receiveFrom = "/topic/t1";
-    private static String SendTo = "/topic/t1";
+    private static String receiveFrom = "/topic/T03";
+    private static String SendTo = "/topic/T03";
 
     private static String customHeader1_name = "custom-header-1";
     private static String customHeader1_value = "custom-value-1";
@@ -63,9 +63,10 @@ public class InteractiveTopicTalk {
                 } else if (msg.equalsIgnoreCase("EXIT")) {
                     break;
                 } else {
+                    client.send(SendTo, msg, new HashMap<>(customHeaders));
                 }
-                client.close();
             }
         }
+        client.close();
     }
 }
