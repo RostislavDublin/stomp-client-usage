@@ -15,14 +15,15 @@ import java.util.Scanner;
  * <p>
  * Before the test, set the following Broker advanced property:
  * - name: DEBUG_PARAMETERS.DEBUG_NAME
- * - value: StompSender:65536;StompListener:65536;StompAgentListener:65536;StompAgentSender:65536;StompSubscriptionHandler:65536
+ * - value: StompSender:65536;StompListener:65536;StompAgentListener:65536;StompAgentSender:65536;
+ * StompSubscriptionHandler:65536
  * to see STOMP/JMS messages exchange through the Broker
  */
-public class InteractiveQueueTalk {
+public class InteractiveTopicTalk {
     private static Say say = new Say();
-    private static String queueToReceiveFrom = "/queue/SampleQ1";
-    private static String subscriptionId = "queue1|auto|1";
-    private static String queueToSendTo = "/queue/SampleQ2";
+    private static String subscriptionId = "stomp-subscription-1";
+    private static String receiveFrom = "/topic/t1";
+    private static String SendTo = "/topic/t1";
 
     private static String customHeader1_name = "custom-header-1";
     private static String customHeader1_value = "custom-value-1";
@@ -30,7 +31,7 @@ public class InteractiveQueueTalk {
     private static String customHeader2_value = "custom-value-2";
 
     public static void main(String[] args) {
-        VertxStompClient client = new VertxStompClient("10.211.55.3", 61667, "D01", "D01");
+        VertxStompClient client = new VertxStompClient("10.211.55.3", 61613, "D01", "D01");
 
         Map<String, String> customHeaders = new HashMap<>();
         customHeaders.put(customHeader1_name, customHeader1_value);
@@ -38,26 +39,33 @@ public class InteractiveQueueTalk {
 
         client.connect();
 
-        client.subscribeAutoAck(queueToReceiveFrom, subscriptionId, event -> {
+        if (!client.isConnected()) {
+            return;
+        }
+        ;
+
+        client.subscribeAutoAck(receiveFrom, subscriptionId, event -> {
             System.out.println("< " + event.getCommand().name() + " on SUBSCRIPTION [" + subscriptionId + "]: "
                     + " hh: " + event.getHeaders().toString()
                     + " pl: " + event.getBodyAsString());
         });
 
         System.out.println("Enter a message. Enter to send ('EXIT'+Enter to stop): ");
-        Scanner in = new Scanner(System.in);
-        while (true) {
-            String msg = in.nextLine();
-            if (StringUtil.isNullOrEmpty(msg)) {
-                continue;
-            } else if (msg.equalsIgnoreCase("EXIT")) {
-                break;
-            } else {
-                client.send(queueToSendTo, msg, new HashMap<>(customHeaders));
+        client.setClosedHandler(() -> {
+            System.exit(0);
+        });
+
+        try (Scanner in = new Scanner(System.in);) {
+            while (true) {
+                String msg = in.nextLine();
+                if (StringUtil.isNullOrEmpty(msg)) {
+                    continue;
+                } else if (msg.equalsIgnoreCase("EXIT")) {
+                    break;
+                } else {
+                }
+                client.close();
             }
         }
-        in.close();
-        client.close();
     }
 }
-

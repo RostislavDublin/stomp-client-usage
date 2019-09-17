@@ -1,7 +1,9 @@
-package stomp;
+package stomp.sonic21221_20436;
 
 import io.netty.util.internal.StringUtil;
+import io.vertx.core.net.JksOptions;
 import other.Say;
+import stomp.VertxStompClient;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,12 +15,14 @@ import java.util.Scanner;
  * It also can send messages to the 'SampleQ2' queue. Type a message on console and press Enter to send.
  * Every outgoing message goes with two custom headers.
  * <p>
- * Before the test, set the following Broker advanced property:
- * - name: DEBUG_PARAMETERS.DEBUG_NAME
- * - value: StompSender:65536;StompListener:65536;StompAgentListener:65536;StompAgentSender:65536;StompSubscriptionHandler:65536
+ * Before the test, set the following at Broker:
+ * - advanced property:
+ * -- name: DEBUG_PARAMETERS.DEBUG_NAME
+ * -- value: StompSender:65536;StompListener:65536;StompAgentListener:65536;StompAgentSender:65536;
+ * StompSubscriptionHandler:65536
  * to see STOMP/JMS messages exchange through the Broker
  */
-public class InteractiveQueueTalk {
+public class InteractiveQueueTalkSSL {
     private static Say say = new Say();
     private static String queueToReceiveFrom = "/queue/SampleQ1";
     private static String subscriptionId = "queue1|auto|1";
@@ -30,7 +34,12 @@ public class InteractiveQueueTalk {
     private static String customHeader2_value = "custom-value-2";
 
     public static void main(String[] args) {
-        VertxStompClient client = new VertxStompClient("10.211.55.3", 61667, "D01", "D01");
+        VertxStompClient client = new VertxStompClient("10.211.55.3", 61614, "D01", "D01");
+        client.getOptions()//.setLogActivity(true)
+              .setSsl(true)//.setTrustAll(true)
+              .setTrustStoreOptions(
+                      new JksOptions().setPath("trustStore.jks").setPassword("password")
+              );
 
         Map<String, String> customHeaders = new HashMap<>();
         customHeaders.put(customHeader1_name, customHeader1_value);

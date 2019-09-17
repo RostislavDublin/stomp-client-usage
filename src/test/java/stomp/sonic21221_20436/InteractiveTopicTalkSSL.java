@@ -1,4 +1,4 @@
-package stomp.sonic21221;
+package stomp.sonic21221_20436;
 
 import io.netty.util.internal.StringUtil;
 import io.vertx.core.net.JksOptions;
@@ -15,17 +15,18 @@ import java.util.Scanner;
  * It also can send messages to the 'SampleQ2' queue. Type a message on console and press Enter to send.
  * Every outgoing message goes with two custom headers.
  * <p>
- * Before the test, set the following Broker advanced property:
- * - name: DEBUG_PARAMETERS.DEBUG_NAME
- * - value: StompSender:65536;StompListener:65536;StompAgentListener:65536;StompAgentSender:65536;
+ * Before the test, set the following at Broker:
+ * - advanced property:
+ * -- name: DEBUG_PARAMETERS.DEBUG_NAME
+ * -- value: StompSender:65536;StompListener:65536;StompAgentListener:65536;StompAgentSender:65536;
  * StompSubscriptionHandler:65536
  * to see STOMP/JMS messages exchange through the Broker
  */
-public class InteractiveQueueTalkSSL {
+public class InteractiveTopicTalkSSL {
     private static Say say = new Say();
-    private static String queueToReceiveFrom = "/queue/SampleQ1";
-    private static String subscriptionId = "queue1|auto|1";
-    private static String queueToSendTo = "/queue/SampleQ2";
+    private static String subscriptionId = "stomp-subscription-1";
+    private static String sendTo = "/topic/t1";
+    private static String receiveFrom = "/topic/t2";
 
     private static String customHeader1_name = "custom-header-1";
     private static String customHeader1_value = "custom-value-1";
@@ -34,12 +35,11 @@ public class InteractiveQueueTalkSSL {
 
     public static void main(String[] args) {
         VertxStompClient client = new VertxStompClient("10.211.55.3", 61614, "D01", "D01");
-        client.getOptions()//.setLogActivity(true)
-              .setSsl(true)//.setTrustAll(true)
+        client.getOptions()
+              .setSsl(true)
               .setTrustStoreOptions(
                       new JksOptions().setPath("trustStore.jks").setPassword("password")
               );
-        //.addEnabledCipherSuite("SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA");
 
         Map<String, String> customHeaders = new HashMap<>();
         customHeaders.put(customHeader1_name, customHeader1_value);
@@ -47,7 +47,7 @@ public class InteractiveQueueTalkSSL {
 
         client.connect();
 
-        client.subscribeAutoAck(queueToReceiveFrom, subscriptionId, event -> {
+        client.subscribeAutoAck(receiveFrom, subscriptionId, event -> {
             System.out.println("< " + event.getCommand().name() + " on SUBSCRIPTION [" + subscriptionId + "]: "
                     + " hh: " + event.getHeaders().toString()
                     + " pl: " + event.getBodyAsString());
@@ -62,7 +62,7 @@ public class InteractiveQueueTalkSSL {
             } else if (msg.equalsIgnoreCase("EXIT")) {
                 break;
             } else {
-                client.send(queueToSendTo, msg, new HashMap<>(customHeaders));
+                client.send(sendTo, msg, new HashMap<>(customHeaders));
             }
         }
         in.close();

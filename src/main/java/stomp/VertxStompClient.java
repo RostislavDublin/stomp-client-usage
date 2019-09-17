@@ -2,9 +2,7 @@ package stomp;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.ext.stomp.Frame;
 import io.vertx.ext.stomp.StompClient;
 import io.vertx.ext.stomp.StompClientConnection;
@@ -21,13 +19,16 @@ public class VertxStompClient {
     private static String queue1 = "/queue/SampleQ1";
     private static String queue2 = "/queue/SampleQ2";
     private static String queue3 = "/queue/SampleQ3";
+    final boolean[] stopAttempts = new boolean[1];
     StompClientOptions options = new StompClientOptions();
     private StompClient stompClient;
     private Vertx vertx = Vertx.vertx();
-    //new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsValue(Buffer.buffer("10.211.55.3 myserver"))));
+    //new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsValue(Buffer.buffer("10.211
+    // .55.3 myserver"))));
     private StompClientConnection connection;
     private int brokerPort;
     private String brokerHost;
+    private Runnable closedHandler = null;
 
     public VertxStompClient(String brokerHost, int brokerPort, String login, String password) {
 
@@ -40,6 +41,15 @@ public class VertxStompClient {
         options.setPasscode(password);
 
         stompClient = StompClient.create(vertx, options);
+
+        stompClient.errorFrameHandler(event -> {
+            System.out.println("< Connection process: " + event.getCommand().name()
+                    + " hh: " + event.getHeaders().toString()
+                    + " pl: " + event.getBodyAsString(StandardCharsets.UTF_8.name()));
+            stopAttempts[0] = true;
+            close();
+        });
+
     }
 
     public StompClientOptions getOptions() {
@@ -109,16 +119,18 @@ public class VertxStompClient {
 
     public VertxStompClient connect() {
         final StompClientConnection[] connectionHolder = new StompClientConnection[1];
-        final boolean[] stopAttempts = new boolean[1];
-        System.out.println(new Date().toString() + "*" + stopAttempts[0]);
+        stopAttempts[0] = false;
         System.out.println("* CONNECT...");
+
         stompClient.connect(brokerPort, brokerHost, ar -> {
             if (ar.succeeded()) {
                 connectionHolder[0] = ar.result();
                 System.out.println("* CONNECTED Ready to send STOMP frames");
             } else {
-                stopAttempts[0] = true;
-                System.out.println("* FAILED to connect to the STOMP server: " + ar.cause().toString());
+                if(!stopAttempts[0]) {
+                    stopAttempts[0] = true;
+                    System.out.println("* FAILED to connect to the STOMP server: " + ar.cause().toString());
+                }
                 stompClient.close();
                 vertx.close();
             }
@@ -146,6 +158,7 @@ public class VertxStompClient {
 
         connection.closeHandler(event -> {
             System.out.println("* DISCONNECTED");
+            close();
         });
 
 /*
@@ -158,8 +171,7 @@ public class VertxStompClient {
 
         connection.connectionDroppedHandler(event -> {
             System.out.println("< Recvd: CONNECTION DROPPED");
-            stompClient.close();
-            vertx.close();
+            close();
         });
 
         connection.pingHandler(event -> {
@@ -172,20 +184,33 @@ public class VertxStompClient {
             );
         });
 
-/*
         stompClient.receivedFrameHandler(event -> {
             System.out.println("Client ReceivedFrameHandler: " + event.getCommand().name());
         });
-*/
+
         return this;
     }
 
+
+
     public void close() {
         if (getConnection() != null && getConnection().isConnected()) {
+            System.out.println("DISCONNECT");
             connection.disconnect();
         }
         stompClient.close();
         vertx.close();
+
+        if(closedHandler != null){
+            closedHandler.run();
+        }
     }
 
+    public boolean isConnected() {
+        return getConnection() != null && getConnection().isConnected();
+    }
+
+    public void setClosedHandler(Runnable closedHandler) {
+        this.closedHandler = closedHandler;
+    }
 }
