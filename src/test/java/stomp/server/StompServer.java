@@ -1,5 +1,6 @@
 package stomp.server;
 
+import io.vertx.ext.stomp.Frame;
 import stomp.VertxStompServer;
 
 import java.util.Scanner;
@@ -11,9 +12,24 @@ public class StompServer {
 
         VertxStompServer server = new VertxStompServer(61613);
 
-        server.getStompServer().stompHandler().receivedFrameHandler((serverFrame) -> {
-            System.out.println("<<< " + serverFrame.frame().toString());
-        });
+        server.getStompServer().stompHandler()
+              .receivedFrameHandler((serverFrame) -> {
+                  System.out.println("<<< " + serverFrame.frame().toString());
+              })
+              .onAckHandler(acknowledgement -> {
+                  // Action to execute when the frames (one in `client-individual` mode, several
+                  // in `client` mode are acknowledged.
+                  Frame subscription = acknowledgement.subscription();
+                  System.out.println("Raised event ACK on subscription" + subscription.getId());
+                  System.out.println("- messages acknowledged: " + acknowledgement.frames().toString());
+              })
+              .onNackHandler(acknowledgement -> {
+                  // Action to execute when the frames (1 in `client-individual` mode, several in
+                  // `client` mode are not acknowledged.
+                  Frame subscription = acknowledgement.subscription();
+                  System.out.println("Raised event NACK on subscription" + subscription.getId());
+                  System.out.println("- messages NOT acknowledged: " + acknowledgement.frames().toString());
+              });
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.submit(() -> {
