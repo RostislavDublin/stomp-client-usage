@@ -11,16 +11,15 @@ public class StompServer {
 
         VertxStompServer server = new VertxStompServer(61613);
 
+        server.getStompServer().stompHandler().receivedFrameHandler((serverFrame) -> {
+            System.out.println("<<< " + serverFrame.frame().toString());
+        });
+
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.submit(() -> {
             server.start();
         });
         executor.shutdown();
-
-        server.getStompServer().stompHandler().receivedFrameHandler((serverFrame)->{
-            System.out.println(serverFrame.frame().toString());
-        });
-
 
         Scanner in = new Scanner(System.in);
         while (true) {

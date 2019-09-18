@@ -1,18 +1,9 @@
 package stomp;
 
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.ext.stomp.Frame;
-import io.vertx.ext.stomp.StompClientConnection;
 import io.vertx.ext.stomp.StompServer;
 import io.vertx.ext.stomp.StompServerHandler;
 import io.vertx.ext.stomp.StompServerOptions;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 public class VertxStompServer {
     StompServerOptions options = new StompServerOptions();
@@ -34,7 +25,10 @@ public class VertxStompServer {
         handler = StompServerHandler.create(vertx);
         stompServer = StompServer
                 .create(vertx, options)
-                .handler(handler);
+                .handler(handler)
+                .writingFrameHandler((serverFrame) -> {
+                    System.out.println(">>> " + serverFrame.frame().toString());
+                });
     }
 
     public VertxStompServer start() {
@@ -42,12 +36,12 @@ public class VertxStompServer {
         System.out.println("* STARTING...");
 
         stompServer.listen(listenPort, listenHost, ar -> {
-                if (ar.failed()) {
-                    System.out.println("Failing to start the STOMP server : " + ar.cause().getMessage());
-                } else {
-                    System.out.println("Ready to receive STOMP frames");
-                }
-            });
+            if (ar.failed()) {
+                System.out.println("Failing to start the STOMP server : " + ar.cause().getMessage());
+            } else {
+                System.out.println("Ready to receive STOMP frames");
+            }
+        });
         return this;
     }
 
