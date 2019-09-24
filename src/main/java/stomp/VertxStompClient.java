@@ -9,7 +9,6 @@ import io.vertx.ext.stomp.StompClientConnection;
 import io.vertx.ext.stomp.StompClientOptions;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +28,7 @@ public class VertxStompClient {
     private int brokerPort;
     private String brokerHost;
     private Runnable closedHandler = null;
+    private Handler<Frame> receiptHandler = new DefaultReceiptHandler();
 
     public VertxStompClient(String brokerHost, int brokerPort, String login, String password) {
 
@@ -66,9 +66,15 @@ public class VertxStompClient {
             headers.putAll(customHeaders);
         }
         Buffer payload = Buffer.buffer(textMessage);
-        connection.send(destination, headers, payload, event -> {
-            System.out.println("< RECEIPT on SEND [" + event.getReceipt() + "] ");
-        });
+        connection.send(destination, headers, payload, getReceiptHandler());
+    }
+
+    public Handler<Frame> getReceiptHandler() {
+        return receiptHandler;
+    }
+
+    public void setReceiptHandler(Handler<Frame> receiptHandler) {
+        this.receiptHandler = receiptHandler;
     }
 
     public StompClientConnection getConnection() {
@@ -109,12 +115,7 @@ public class VertxStompClient {
         if (ackMode != null) {
             headers.put("ack", ackMode);
         }
-        connection.subscribe(destination, headers, handler,
-                event -> {
-                    System.out.println("< RECEIPT on SUBSCRIBE [" + event.getReceipt() + "]");
-                }
-        );
-
+        connection.subscribe(destination, headers, handler, getReceiptHandler());
     }
 
     public VertxStompClient connect() {
@@ -127,7 +128,7 @@ public class VertxStompClient {
                 connectionHolder[0] = ar.result();
                 System.out.println("* CONNECTED Ready to send STOMP frames");
             } else {
-                if(!stopAttempts[0]) {
+                if (!stopAttempts[0]) {
                     stopAttempts[0] = true;
                     System.out.println("* FAILED to connect to the STOMP server: " + ar.cause().toString());
                 }
@@ -191,8 +192,6 @@ public class VertxStompClient {
         return this;
     }
 
-
-
     public void close() {
         if (getConnection() != null && getConnection().isConnected()) {
             System.out.println("DISCONNECT");
@@ -201,7 +200,7 @@ public class VertxStompClient {
         stompClient.close();
         vertx.close();
 
-        if(closedHandler != null){
+        if (closedHandler != null) {
             closedHandler.run();
         }
     }
@@ -212,5 +211,13 @@ public class VertxStompClient {
 
     public void setClosedHandler(Runnable closedHandler) {
         this.closedHandler = closedHandler;
+    }
+
+    private class DefaultReceiptHandler implements Handler<Frame> {
+        @Override
+        public void handle(Frame event) {
+            String msg = String.format("< RECEIPT on %s [%s] ", event.getCommand().name(), event.getReceipt());
+            System.out.println(msg);
+        }
     }
 }
