@@ -30,7 +30,7 @@ public class InteractiveQueueTalk {
     private static String customHeader2_value = "custom-value-2";
 
     public static void main(String[] args) {
-        VertxStompClient client = new VertxStompClient("10.211.55.3", 61667, "D01", "D01");
+        VertxStompClient client = new VertxStompClient("10.211.55.3", 61613, "D01", "D01");
 
         Map<String, String> customHeaders = new HashMap<>();
         customHeaders.put(customHeader1_name, customHeader1_value);

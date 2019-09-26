@@ -23,7 +23,7 @@ public class InteractiveQueueTalk_ExternalAuth {
     private static Say say = new Say();
     private static String queueToReceiveFrom = "/queue/SampleQ1";
     private static String subscriptionId = "queue1|auto|1";
-    private static String queueToSendTo = "/queue/SampleQ2";
+    private static String queueToSendTo = "/queue/SampleQ1";
 
     private static String customHeader1_name = "custom-header-1";
     private static String customHeader1_value = "custom-value-1";
@@ -31,7 +31,7 @@ public class InteractiveQueueTalk_ExternalAuth {
     private static String customHeader2_value = "custom-value-2";
 
     public static void main(String[] args) {
-        VertxStompClient client = new VertxStompClient("10.211.55.3", 61613, "kvaughan", "bribery");
+        VertxStompClient client = new VertxStompClient("10.211.55.3", 61615, "kvaughan", "bribery");
 
         Map<String, String> customHeaders = new HashMap<>();
         customHeaders.put(customHeader1_name, customHeader1_value);
